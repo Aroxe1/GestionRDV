@@ -19,6 +19,10 @@
                     <x-nav-link :href="route('booking.create')" :active="request()->routeIs('booking.*')">
                         Réserver
                     </x-nav-link>
+
+                    <x-nav-link :href="route('booking.index')" :active="request()->routeIs('booking.index')">
+                        Mes réservations
+                    </x-nav-link>
                 </div>
             </div>
 

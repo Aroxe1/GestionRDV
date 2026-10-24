@@ -23,4 +23,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/reserver', [BookingController::class, 'store'])->name('booking.store');
 });
 
+Route::middleware('auth')->group(function () {
+    Route::get('/mes-reservations', [BookingController::class, 'index'])->name('booking.index');
+    Route::patch('/mes-reservations/{reservation}/annuler', [BookingController::class, 'cancel'])->name('booking.cancel');
+});
+
 require __DIR__.'/auth.php';

@@ -69,7 +69,41 @@ class BookingController extends Controller
         }
 
         return redirect()
-            ->route('booking.create')
+            ->route('booking.index')
             ->with('success', "Réservation confirmée : {$service->name} le {$start->translatedFormat('l j F à H:i')}.");
+    }
+
+    public function index(Request $request){
+        $now = now();
+
+        $upcoming = $request->user()->reservations()
+            ->with('service')
+            ->where('status', 'confirmed')
+            ->where('starts_at', '>=', $now)
+            ->orderBy('starts_at')
+            ->get();
+
+        $past = $request->user()->reservations()
+            ->with('service')
+            ->where(fn ($q) => $q->where('status', '!=', 'confirmed')->orWhere('starts_at', '<', $now))
+            ->orderByDesc('starts_at')
+            ->limit(10)
+            ->get();
+
+        return view('booking.index', compact('upcoming', 'past'));
+    }
+
+    public function cancel(Request $request, Reservation $reservation)
+    {
+        // Un client ne peut annuler que ses propres réservations
+        abort_unless($reservation->user_id === $request->user()->id, 403);
+
+        if ($reservation->status !== 'confirmed' || $reservation->starts_at->isPast()) {
+            return back()->withErrors(['cancel' => "Cette réservation ne peut plus être annulée."]);
+        }
+
+        $reservation->update(['status' => 'cancelled']);
+
+        return back()->with('success', 'Réservation annulée.');
     }
 }
