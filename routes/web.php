@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\MerchantPlanningController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -26,6 +27,12 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/mes-reservations', [BookingController::class, 'index'])->name('booking.index');
     Route::patch('/mes-reservations/{reservation}/annuler', [BookingController::class, 'cancel'])->name('booking.cancel');
+});
+
+Route::middleware(['auth', 'merchant'])->prefix('commercant')->group(function () {
+    Route::get('/planning', [MerchantPlanningController::class, 'index'])->name('merchant.planning');
+    Route::get('/planning/events', [MerchantPlanningController::class, 'events'])->name('merchant.events');
+    Route::patch('/planning/{reservation}/annuler', [MerchantPlanningController::class, 'cancel'])->name('merchant.cancel');
 });
 
 require __DIR__.'/auth.php';

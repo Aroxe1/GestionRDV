@@ -23,6 +23,12 @@
                     <x-nav-link :href="route('booking.index')" :active="request()->routeIs('booking.index')">
                         Mes réservations
                     </x-nav-link>
+
+                    @if (auth()->user()->role === 'merchant')
+                        <x-nav-link :href="route('merchant.planning')" :active="request()->routeIs('merchant.*')">
+                            Planning
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
