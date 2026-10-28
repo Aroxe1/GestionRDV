@@ -1,58 +1,131 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Salon Éclat · Gestionnaire de réservations
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Application web de réservation en ligne pour un petit commerce (ici, un salon de coiffure). Les clients réservent un créneau en quelques clics, à toute heure, et la commerçante suit son planning en un coup d'œil, sans double réservation possible.
 
-## About Laravel
+Projet personnel réalisé avec **Laravel** dans le cadre de ma formation en BUT Informatique.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Le problème résolu
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Un petit commerçant perd du temps au téléphone, note ses rendez-vous sur un carnet et risque les doubles réservations. Ses clients, eux, ne peuvent pas réserver le soir ou le week-end.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Fonctionnalités
 
-## Learning Laravel
+**Côté client**
+- Inscription, connexion et déconnexion
+- Choix d'une prestation et d'une date, avec affichage des **créneaux réellement disponibles**
+- Confirmation de la réservation
+- Page « Mes réservations » : rendez-vous à venir, historique, annulation
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+**Côté commerçant**
+- Planning hebdomadaire (FullCalendar) avec tous les rendez-vous
+- Annulation d'un rendez-vous en un clic (le créneau se libère automatiquement)
+- Pages protégées : réservées au rôle `merchant`
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+**Page d'accueil publique**
+- Prestations (durée, prix) et horaires d'ouverture lus directement dans la base de données
+- Affichage adapté au téléphone (responsive)
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## Captures d'écran
 
-## Agentic Development
+| Accueil | Choix du créneau |
+|---|---|
+| ![Accueil](docs/screenshots/accueil.png) | ![Réservation](docs/screenshots/reservation.png) |
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+| Mes réservations | Planning du commerçant |
+|---|---|
+| ![Mes réservations](docs/screenshots/mes-reservations.png) | ![Planning](docs/screenshots/planning.png) |
+
+## Technologies
+
+- **Laravel 13** (PHP 8.2+), architecture MVC
+- **Laravel Breeze** (Blade) pour l'authentification
+- **Tailwind CSS** et **Vite** pour le front
+- **FullCalendar 6** pour le planning
+- **SQLite** par défaut (MySQL possible via le fichier `.env`)
+- **PHPUnit** pour les tests automatisés
+
+## Points techniques intéressants
+
+**Calcul des créneaux disponibles** : la classe `App\Services\SlotGenerator` croise les horaires d'ouverture du jour, la durée de la prestation choisie et les réservations existantes. Elle propose un créneau toutes les 30 minutes, écarte les créneaux passés et ceux qui déborderaient après la fermeture.
+
+**Anti double réservation** : deux plages horaires se chevauchent si le début de l'une est avant la fin de l'autre **et** que sa fin est après le début de l'autre. Cette règle est appliquée à l'affichage des créneaux, puis vérifiée une seconde fois, dans une transaction, juste avant l'enregistrement.
+
+**Sécurité**
+- Middleware `auth` et middleware de rôle `merchant` sur les pages du commerçant (erreur 403 sinon)
+- Un client ne peut annuler que ses propres réservations (vérification côté serveur)
+- Protection CSRF sur tous les formulaires, validation des données reçues
+
+**Annulation sans suppression** : une réservation annulée change de statut (`cancelled`) au lieu d'être effacée, ce qui conserve l'historique.
+
+## Modèle de données
+
+| Table | Rôle |
+|---|---|
+| `users` | comptes, avec une colonne `role` (`client` ou `merchant`) |
+| `services` | prestations : nom, durée en minutes, prix en centimes |
+| `business_hours` | horaires d'ouverture par jour de la semaine |
+| `reservations` | client, prestation, début, fin, statut |
+
+Relations : un utilisateur et un service ont plusieurs réservations ; chaque réservation appartient à un utilisateur et à un service.
+
+## Installation
+
+Prérequis : PHP 8.2 ou plus (extensions `fileinfo`, `mbstring`, `openssl`, `curl`, `zip`, `pdo_sqlite`), Composer, Node.js.
 
 ```bash
-composer require laravel/boost --dev
+git clone https://github.com/Aroxe1/GestionRDV.git
+cd GestionRDV
 
-php artisan boost:install
+composer install
+cp .env.example .env
+php artisan key:generate
+
+touch database/database.sqlite
+php artisan migrate:fresh --seed
+
+npm install
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Lancer le projet dans deux terminaux :
 
-## Contributing
+```bash
+php artisan serve
+```
+```bash
+npm run dev
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Puis ouvrir http://127.0.0.1:8000.
 
-## Code of Conduct
+## Comptes de démonstration
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Le jeu de données (services, horaires, clients et réservations autour de la date du jour) est créé par `php artisan migrate:fresh --seed`.
 
-## Security Vulnerabilities
+| Rôle | E-mail | Mot de passe |
+|---|---|---|
+| Commerçante | `commercant@demo.fr` | `password` |
+| Client | `client@demo.fr` | `password` |
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Ces adresses sont fictives. Les réservations de démo étant générées par rapport à la date du jour, relance `php artisan migrate:fresh --seed` pour recentrer le planning sur la semaine en cours.
 
-## License
+## Tests
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+php artisan test
+```
+
+Les tests couvrent les règles importantes : jour fermé sans créneau, blocage d'une prestation d'une heure par un rendez-vous voisin, libération du créneau après annulation, refus de la double réservation, et contrôle des droits d'accès (un client ne peut ni annuler la réservation d'un autre ni ouvrir le planning).
+
+## Pistes d'amélioration
+
+- E-mail de confirmation et rappel avant le rendez-vous (SMS ou e-mail)
+- Verrou en base de données (`lockForUpdate`) pour garantir l'unicité du créneau même en cas de réservations strictement simultanées
+- Gestion de plusieurs coiffeurs, chacun avec son planning
+- Paiement d'un acompte en ligne
+- Déplacement d'un rendez-vous par glisser-déposer dans le planning
+- Déploiement en ligne
+
+## Auteur
+
+**Maxence Royon** · étudiant en BUT Informatique (Université d'Artois), à la recherche d'une alternance en développement.
+GitHub : [Aroxe1](https://github.com/Aroxe1)
