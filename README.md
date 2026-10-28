@@ -25,16 +25,6 @@ Un petit commerçant perd du temps au téléphone, note ses rendez-vous sur un c
 - Prestations (durée, prix) et horaires d'ouverture lus directement dans la base de données
 - Affichage adapté au téléphone (responsive)
 
-## Captures d'écran
-
-| Accueil | Choix du créneau |
-|---|---|
-| ![Accueil](docs/screenshots/accueil.png) | ![Réservation](docs/screenshots/reservation.png) |
-
-| Mes réservations | Planning du commerçant |
-|---|---|
-| ![Mes réservations](docs/screenshots/mes-reservations.png) | ![Planning](docs/screenshots/planning.png) |
-
 ## Technologies
 
 - **Laravel 13** (PHP 8.2+), architecture MVC
