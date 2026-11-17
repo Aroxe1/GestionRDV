@@ -62,6 +62,17 @@ Relations : un utilisateur et un service ont plusieurs réservations ; chaque r�
 
 Prérequis : PHP 8.2 ou plus (extensions `fileinfo`, `mbstring`, `openssl`, `curl`, `zip`, `pdo_sqlite`), Composer, Node.js.
 
+## Lancer avec Docker (recommandé)
+
+Seul prérequis : [Docker](https://www.docker.com/) installé et démarré.
+
+```bash
+git clone https://github.com/Aroxe1/GestionRDV.git
+cd GestionRDV
+docker compose up --build
+```
+
+Puis ouvrir http://localhost:8080. La base de données et les données de démonstration sont créées automatiquement au démarrage.
 ```bash
 git clone https://github.com/Aroxe1/GestionRDV.git
 cd GestionRDV
