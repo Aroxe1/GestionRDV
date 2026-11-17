@@ -5,7 +5,8 @@ services:
         ports:
             - "8080:80"
         env_file:
-            - .env
+            - path: .env
+              required: false
         environment:
             APP_ENV: production
             APP_DEBUG: "false"
