@@ -8,6 +8,8 @@ use App\Services\SlotGenerator;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Support\Facades\Cache;
 
 class BookingController extends Controller
 {
@@ -42,25 +44,35 @@ class BookingController extends Controller
         $start   = Carbon::parse($data['date'] . ' ' . $data['time']);
         $end     = $start->copy()->addMinutes($service->duration_minutes);
 
-        $reservation = DB::transaction(function () use ($generator, $service, $start, $end, $request, $data) {
-            // 1. Le créneau doit faire partie de ceux proposés (horaires, jour ouvert, futur)
-            if (! in_array($data['time'], $generator->availableSlots($service, $start), true)) {
-                return null;
-            }
+        try {
+            // Un seul enregistrement à la fois pour une même journée.
+            // Le verrou se libère seul après 10 s si PHP plante en cours de route.
+            $reservation = Cache::lock('reservation:' . $data['date'], 10)
+                ->block(3, function () use ($generator, $service, $start, $end, $request, $data) {
+                    return DB::transaction(function () use ($generator, $service, $start, $end, $request, $data) {
+                        // Le créneau doit faire partie de ceux proposés
+                        if (! in_array($data['time'], $generator->availableSlots($service, $start), true)) {
+                            return null;
+                        }
 
-            // 2. Dernière vérification juste avant d'enregistrer
-            if (! $generator->isSlotFree($start, $end)) {
-                return null;
-            }
+                        // Dernière vérification juste avant d'enregistrer
+                        if (! $generator->isSlotFree($start, $end)) {
+                            return null;
+                        }
 
-            return Reservation::create([
-                'user_id'    => $request->user()->id,
-                'service_id' => $service->id,
-                'starts_at'  => $start,
-                'ends_at'    => $end,
-                'status'     => 'confirmed',
-            ]);
-        });
+                        return Reservation::create([
+                            'user_id'    => $request->user()->id,
+                            'service_id' => $service->id,
+                            'starts_at'  => $start,
+                            'ends_at'    => $end,
+                            'status'     => 'confirmed',
+                        ]);
+                    });
+                });
+        } catch (LockTimeoutException $e) {
+            // Le verrou n'a pas pu être obtenu en 3 s on refuse
+            $reservation = null;
+        }
 
         if (! $reservation) {
             return back()
