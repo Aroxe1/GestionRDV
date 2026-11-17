@@ -1,0 +1,29 @@
+services:
+    app:
+        build: .
+        image: salon-eclat
+        ports:
+            - "8080:80"
+        env_file:
+            - .env
+        environment:
+            APP_ENV: production
+            APP_debug: "false"
+            APP_URL: http://localhost:8080
+            DB_CONNECTION: sqlite
+            DB_DATABASE: /var/www/data/database.sqlite
+            CACHE_STORE: database
+            SESSION_DRIVER: database
+        volumes:
+            - sqlite-data:/var/www/data
+        command: >
+            sh -c "touch /var/www/data/database.sqlite
+            && php artisan migrate --force
+            && php artisan db:seed --force
+            && php artisan config:cache
+            && php artisan route:cache
+            && php artisan view:cache
+            && chown -R www-data:www-data storage bootstrap/cache /var/www/data
+            && exec apache2-foreground"
+volumes:
+    sqlite-data:
